@@ -398,13 +398,19 @@ namespace dffl
 		"#version 130\n"
 		"uniform sampler2D tex;"
 		"uniform float sf;"
+		"uniform float stroke;"
+		"uniform vec4 drawcolor;"
 		"uniform vec4 fillcolor;"
 		"in vec2 texcoord;"
 		"out vec4 fragcolor;"
 		"void main ()"
 		"{"
-		"	float a = smoothstep(0.5 + sf, 0.5 - sf, texture(tex, texcoord).r);"
-		"	fragcolor = vec4(fillcolor.r, fillcolor.g, fillcolor.b, fillcolor.a * a);"
+		"	float d = smoothstep(0.5 + stroke + sf, 0.5 + stroke - sf, texture(tex, texcoord).r);"
+		"	float f = smoothstep(0.5 - stroke + sf, 0.5 - stroke - sf, texture(tex, texcoord).r);"
+		"	d -= f;"
+		"	vec4 fillc = vec4((1.0 - d) * fillcolor.rgb, fillcolor.a * f);"
+		"	vec4 drawc = vec4((1.0 - f) * drawcolor.rgb, drawcolor.a * d);"
+		"	fragcolor = drawc + fillc;"
 		"}";
 
 		FT_Library ftlib;
@@ -413,6 +419,8 @@ namespace dffl
 		float size = 64.0f;
 		float smooth = 1.0f;
 		float fillcolor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float outlncolor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float outlnwidth = 0.0f;
 		Program *prog;
 		
 		Boxes boxes;
@@ -451,6 +459,16 @@ namespace dffl
 		void FillColor(float r, float g, float b, float a)
 		{
 			fillcolor[0] = r, fillcolor[1] = g, fillcolor[2] = b, fillcolor[3] = a;
+		}
+		
+		void OutlineWidth(float w)
+		{
+			outlnwidth = w;
+		}
+		
+		void OutlineColor(float r, float g, float b, float a)
+		{
+			outlncolor[0] = r, outlncolor[1] = g, outlncolor[2] = b, outlncolor[3] = a;
 		}
 
 		void Smooth(float smooth)
@@ -627,6 +645,8 @@ namespace dffl
 			glActiveTexture(GL_TEXTURE0);
 			glUniform1i((*context->prog)["tex"], 0);
 			glUniform4fv((*context->prog)["fillcolor"], 1, context->fillcolor);
+			glUniform4fv((*context->prog)["drawcolor"], 1, context->outlncolor);
+			glUniform1f((*context->prog)["stroke"], context->outlnwidth * 960 / 2 / 255 / 100);			
 			glUniform1f((*context->prog)["sf"], 960.0f / context->size / 255 * context->smooth);
 
 			float pos;
