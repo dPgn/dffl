@@ -91,10 +91,6 @@
 	* Standard C++ exception handling mechanism can be slow and/or unreliable on some (exotic) platforms. An alternative
 	  error handling mechanism should be provided.
 	
-	* Font outline drawing. Generally, text effects should be kept out of DFFL, as the text can always be rendered in
-	  a texture and then processed in any way desired. However, outlines are much easier to implement, as well as more
-	  accurate, when using distance field data instead of color data.
-	
 	* A comment or two should be added as long as I still remember what it does.
 */
 
