@@ -404,7 +404,7 @@ namespace dffl
 		"	float d = smoothstep(0.5 + stroke + sf, 0.5 + stroke - sf, texture(tex, texcoord).r);"
 		"	float f = smoothstep(0.5 - stroke + sf, 0.5 - stroke - sf, texture(tex, texcoord).r);"
 		"	vec4 fillc = vec4((1.0 - (d - f)) * fillcolor.rgb, fillcolor.a * f);"
-		"	vec4 drawc = vec4((1.0 - f) * d * drawcolor.rgb, drawcolor.a * (d - f));"
+		"	vec4 drawc = (d - f) * vec4((1.0 - f) * drawcolor.rgb, drawcolor.a);"
 		"	fragcolor = drawc + fillc;"
 		"}";
 
