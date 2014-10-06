@@ -74,7 +74,7 @@ int main()
 		ctx.Size(130);
 		ctx.FillColor(0.8, 0.2, 0.1, 0.7);
 		ctx.OutlineColor(1.0, 1.0, 1.0, 1.0);
-		ctx.OutlineWidth(2.0f);
+		ctx.OutlineWidth(3.0f);
 		font.Write("130px text");
 		ctx.MoveTo(-390, -290);
 		ctx.Size(160);

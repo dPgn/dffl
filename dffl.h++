@@ -402,10 +402,9 @@ namespace dffl
 		"void main ()"
 		"{"
 		"	float d = smoothstep(0.5 + stroke + sf, 0.5 + stroke - sf, texture(tex, texcoord).r);"
-		"	float f = smoothstep(0.5 - stroke + sf, 0.5 - stroke - sf, texture(tex, texcoord).r);"
-		"	vec4 fillc = vec4((1.0 - (d - f)) * fillcolor.rgb, fillcolor.a * f);"
-		"	vec4 drawc = (d - f) * vec4((1.0 - f) * drawcolor.rgb, drawcolor.a);"
-		"	fragcolor = drawc + fillc;"
+		"	float f = smoothstep(0.5 - stroke + 3 * sf, 0.5 - stroke + sf, texture(tex, texcoord).r);"
+		"	vec4 color = drawcolor * (1.0 - f) + fillcolor * f;" 
+		"	fragcolor =  vec4(color.rgb, color.a * d);"
 		"}";
 
 		FT_Library ftlib;
