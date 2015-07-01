@@ -94,6 +94,8 @@
 	* A comment or two should be added as long as I still remember what it does.
 */
 
+#pragma once
+
 #include <cmath>
 #include <cstring>
 #include <algorithm>
@@ -357,10 +359,10 @@ namespace dffl
 			buffer[index + 23] = t + txh;
 		}
 		
-		void Render(size_t count)
+		void Render(size_t index, size_t count)
 		{
 			glBindBuffer(GL_ARRAY_BUFFER, vbuf);
-			glBufferData(GL_ARRAY_BUFFER, count * 6 * 4 * sizeof(GLfloat), buffer, GL_DYNAMIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, count * 6 * 4 * sizeof(GLfloat), buffer + 6 * 4 * index, GL_DYNAMIC_DRAW);
 
 			glBindVertexArray(varray);
 			glEnableVertexAttribArray(0);
@@ -368,12 +370,24 @@ namespace dffl
 			glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 			glDrawArrays(GL_TRIANGLES, 0, count * 6);
 		}
+
+		void Render(size_t count)
+		{
+			Render(0, count);
+		}
 	};
 	
 	struct FTError
 	{
 		int err;
 		FTError(int err) { this->err = err; }
+	};
+	
+	enum class Alignment
+	{
+		Left,
+		Right,
+		Center
 	};
 	
 	class Context
@@ -384,7 +398,7 @@ namespace dffl
 		"#version 130\n"
 		"in vec4 vertex;"
 		"out vec2 texcoord;"
-		"void main ()"
+		"void main()"
 		"{"
 		"	gl_Position = vec4(vertex.xy, 0.0, 1.0);"
 		"	texcoord = vertex.zw;"
@@ -399,7 +413,7 @@ namespace dffl
 		"uniform vec4 fillcolor;"
 		"in vec2 texcoord;"
 		"out vec4 fragcolor;"
-		"void main ()"
+		"void main()"
 		"{"
 		"	float d = smoothstep(0.5 + stroke + sf, 0.5 + stroke - sf, texture(tex, texcoord).r);"
 		"	float f = smoothstep(0.5 - stroke + 3 * sf, 0.5 - stroke + sf, texture(tex, texcoord).r);"
@@ -415,6 +429,7 @@ namespace dffl
 		float fillcolor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		float outlncolor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		float outlnwidth = 0.0f;
+		Alignment align = Alignment::Left;
 		Program *prog;
 		
 		Boxes boxes;
@@ -430,6 +445,11 @@ namespace dffl
 		void Size(float size)
 		{
 			this->size = size;
+		}
+		
+		void Align(Alignment alignment)
+		{
+			align = alignment;
 		}
 		
 		void Viewport(unsigned width, unsigned height)
@@ -450,7 +470,7 @@ namespace dffl
 			y += dy;
 		}
 		
-		void FillColor(float r, float g, float b, float a)
+		void FillColor(float r, float g, float b, float a = 1.0f)
 		{
 			fillcolor[0] = r, fillcolor[1] = g, fillcolor[2] = b, fillcolor[3] = a;
 		}
@@ -460,7 +480,7 @@ namespace dffl
 			outlnwidth = w;
 		}
 		
-		void OutlineColor(float r, float g, float b, float a)
+		void OutlineColor(float r, float g, float b, float a = 1.0f)
 		{
 			outlncolor[0] = r, outlncolor[1] = g, outlncolor[2] = b, outlncolor[3] = a;
 		}
@@ -468,6 +488,16 @@ namespace dffl
 		void Smooth(float smooth)
 		{
 			this->smooth = smooth;
+		}
+		
+		float GetWidth()
+		{
+			return width;
+		}
+		
+		float GetHeight()
+		{
+			return height;
 		}
 	};
 	
@@ -627,10 +657,22 @@ namespace dffl
 		{
 			Add(DecodeUTF8(text.begin(), text.end()));
 		}
+		
+		float WidthOf(const std::u32string &text)
+		{
+			Add(text);
+			float width = 0;
+			for (auto c : text)
+			{
+				const Glyph &glyph = glyphs.count(c)? glyphs[c] : glyphs[0];
+				width += glyph.advance * context->size;
+			}
+			return width;
+		}
 
 		void Write(const std::u32string &text)
 		{
-			Add(text);
+			float width = WidthOf(text);
 			
 			std::set<GLuint> usedtex; 
 			for (auto c : text) usedtex.insert(glyphs.count(c)? glyphs[c].texture : *textures.begin());
@@ -646,7 +688,7 @@ namespace dffl
 			float pos;
 			for (auto t : usedtex)
 			{
-				pos = 0.0f;
+				pos = context->align == Alignment::Left? 0.0f : context->align == Alignment::Right? -width : -width / 2;
 				int n = 0;
 				for (auto c : text)
 				{
@@ -664,7 +706,10 @@ namespace dffl
 				glBindTexture(GL_TEXTURE_2D, t);
 				context->boxes.Render(n);
 			}
-			context->x += pos;
+			if (context->align == Alignment::Center)
+				context->y -= context->size;
+			else
+				context->x += context->align == Alignment::Left? pos : -width;
 		}
 		 
 		void Write(const std::string &text)
